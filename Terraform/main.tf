@@ -9,7 +9,7 @@ module "vpc" {
   enable_dns_support   = true
   map_public_ip_on_launch = true
 }
- 
+
 # Security Group
 module "security_group" {
   source      = "terraform-aws-modules/security-group/aws"
@@ -29,7 +29,7 @@ module "security_group" {
 module "iam" {
   source     = "terraform-aws-modules/iam/aws//modules/iam-assumable-role"
   create_role = true
-  role_name  = "newrole-deepseek"
+  role_name  = "newrole-deepseek2"
   trusted_role_services = ["ec2.amazonaws.com"]
 }
  
@@ -39,13 +39,10 @@ resource "aws_iam_role_policy_attachment" "s3_readonly" {
 }
  
 resource "aws_iam_instance_profile" "deepseek_profile" {
-  name = "deepseek-profile"
+  name = "deepseek-profile2"
   role = module.iam.iam_role_name
 }
  
-
- 
-
  
 # EC2 Instance
 resource "aws_instance" "deepseek_instance" {
