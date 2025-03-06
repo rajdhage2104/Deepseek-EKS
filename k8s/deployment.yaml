@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deepseek-deployment
+  namespace: deepseek
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: deepseek
+  template:
+    metadata:
+      labels:
+        app: deepseek
+    spec:
+      containers:
+      - name: ollama
+        image: ollama/ollama:latest
+        command: ["sh", "-c"]
+        args:
+          - |
+            ollama serve &
+            sleep 10
+            ollama pull deepseek-r1:7b
+            ollama run deepseek-r1:7b
+        resources:
+          limits:
+            nvidia.com/gpu: 1
+            memory: "24Gi"
+            cpu: "8"
+          requests:
+            nvidia.com/gpu: 1
+            memory: "16Gi"
+            cpu: "4"
+        ports:
+        - containerPort: 11434
+          name: ollama
+        volumeMounts:
+        - name: ollama-data
+          mountPath: /root/.ollama
+      - name: web-ui
+        image: ghcr.io/open-webui/open-webui:main
+        ports:
+        - containerPort: 8080
+        env:
+        - name: OLLAMA_API_BASE_URL
+          value: "http://localhost:11434/api"
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1"
+      volumes:
+      - name: ollama-data
+        emptyDir: {}
+      nodeSelector:
+        node.kubernetes.io/instance-type: g4dn.xlarge

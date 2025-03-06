@@ -1,3 +1,17 @@
+# AWS Provider configuration
+provider "aws" {
+  region = var.aws_region
+}
+
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
 # VPC
 module "vpc" {
   source = "terraform-aws-modules/vpc/aws"
@@ -41,29 +55,4 @@ resource "aws_iam_role_policy_attachment" "s3_readonly" {
 resource "aws_iam_instance_profile" "deepseek_profile" {
   name = "deepseek-profile2"
   role = module.iam.iam_role_name
-}
- 
- 
-# EC2 Instance
-resource "aws_instance" "deepseek_instance" {
-  ami                    = var.ami
-  instance_type          = var.instance_type
-  key_name               = var.key_name
-  subnet_id              = module.vpc.public_subnets[0]
-  vpc_security_group_ids = [module.security_group.security_group_id]
-  iam_instance_profile   = aws_iam_instance_profile.deepseek_profile.name
-  user_data              = file("userdata.sh")
- 
-  root_block_device {
-    volume_size = 100
-    volume_type = "gp3"
-  }
- 
-  tags = {
-    Name = "deepseek-server"
-  }
-}
- 
-output "instance_public_dns" {
-  value = aws_instance.deepseek_instance.public_ip
 }
