@@ -99,46 +99,6 @@ jobs:
         run: |
           echo "Retrieving Terraform Outputs..."
           echo "INSTANCE_PUBLIC_IP=$(terraform output -raw ec2_public_ip)" >> $GITHUB_ENV
-            
-      # Create known_hosts file inside SSH directory 
-      - name: Create SSH directory and known_hosts file
-        run: |
-          mkdir -p ~/.ssh
-          touch ~/.ssh/known_hosts
-
-      # Add private key to id_rsa
-      - name: Extract SSH private key    
-        run: echo "${{ secrets.PRIVATE_SSH_KEY }}" > ~/.ssh/id_rsa
-        shell: bash
-
-      # Grant read-write permission to id_rsa 
-      - name: Set proper permissions for the private key   
-        run: chmod 600 ~/.ssh/id_rsa
-
-      # Install SSH Client
-      - name: Install SSH Client    
-        run: sudo apt-get install -y openssh-client
-          
-      # Deploying Deepseek on EC2 which contains docker
-      - name: Deploy Deepseek to EC2
-        run: |
-          ssh-keyscan -H "$INSTANCE_PUBLIC_IP" >> ~/.ssh/known_hosts
-          ssh -i ~/.ssh/id_rsa ec2-user@"$INSTANCE_PUBLIC_IP" '
-            docker run -d --gpus=all -v ollama:/root/.ollama -p 11434:11434 --name ollama --restart always ollama/ollama
-            sleep 120
-            
-            docker exec ollama ollama run deepseek-r1:7b
-            docker exec ollama ollama run deepseek-r1:14b
-            
-            docker run -d -p 3000:8080 --add-host=host.docker.internal:host-gateway -v open-webui:/app/backend/data --name open-webui --restart always ghcr.io/open-webui/open-webui:main
-          '
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
 
       - name: Update kube config
         run: aws eks update-kubeconfig --name deepseek-cluster --region us-east-1
